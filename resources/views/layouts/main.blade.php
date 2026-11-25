@@ -57,10 +57,17 @@
                         @auth
                         <!-- ALLEEN VOOR INGELOGDE GEBRUIKERS -->
                         <ul id="theme-menu" class="dropdown-content">
-                            <li><a href="profile.html">Profiel</a></li>
-                            <li><a href="dashboard.html">Beheer</a></li>    <!-- ALLEEN VOOR ADMINS -->
-                            <li><a href="logout.html">Afmelden</a></li>
+                            <li><a href="{{ route('profile.edit') }}">Profiel</a></li>
+                            @if (Auth::user()->isAdmin())
+                            <li><a href="{{ route('dashboard') }}">Beheer</a></li>    <!-- ALLEEN VOOR ADMINS -->
+                            @endif
+                            <li><a href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Afmelden</a></li>
                         </ul>
+
+                        <!-- Afmelden moet met POST, daarom verstuurt de link hierboven dit formulier -->
+                        <form id="logout-form" method="POST" action="{{ route('logout') }}" style="display: none;">
+                            @csrf
+                        </form>
                         <!-- EINDE INGELOGD -->
                         @endauth
 
@@ -124,5 +131,6 @@
         <script type="text/javascript" src="{{ asset('js/ckeditor/plugins/prism/lib/prism/prism_patched.min.js') }}"></script>
         <script type="text/javascript" src="{{ asset('js/main.js') }}"></script>
         <script type="text/javascript" src="{{ asset('js/forum.js') }}"></script>
+        @stack('scripts')
     </body>
 </html>

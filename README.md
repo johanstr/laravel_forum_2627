@@ -1,58 +1,135 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# AO Forum
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Een discussieforum gebouwd met Laravel, ontwikkeld tijdens de Laravel-workshops voor de opleiding Software Developer (Alfa-college, schooljaar 2026-2027). Het project groeit per workshop stap voor stap; deze repository bevat de stand van zaken na de laatste workshop.
 
-## About Laravel
+## Techniek
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+| Onderdeel       | Versie / keuze                                         |
+|-----------------|--------------------------------------------------------|
+| PHP             | 8.3+ (lokaal 8.5 via MAMP)                             |
+| Framework       | Laravel 13                                             |
+| Authenticatie   | Laravel Breeze (Blade-variant)                         |
+| Database        | SQLite (standaard in `.env.example`); MySQL kan via `.env` |
+| Testen          | Pest 5                                                 |
+| Code style      | Laravel Pint                                           |
+| Frontend forum  | Statische CSS/JS in `public/` (Materialize-achtige stijl) |
+| Frontend Breeze | Tailwind CSS + Alpine.js via Vite                      |
+| AI-tooling      | Laravel Boost (MCP-server + skills)                    |
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
-
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Installatie
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+composer run setup        # composer install, .env, key, migrate, npm install + build
+php artisan migrate:fresh --seed
+composer run dev          # start server, queue, logs en Vite
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+De app draait daarna op <http://localhost:8000>.
 
-## Contributing
+### Testaccount
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+De seeder maakt een vast account aan:
 
-## Code of Conduct
+- E-mail: `admin@admin.com`
+- Wachtwoord: `password`
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Daarnaast worden 9 extra gebruikers, 20 threads, 50 topics en 200 replies met nepdata aangemaakt.
 
-## Security Vulnerabilities
+Het testaccount is admin (`is_admin = true`) en komt na het inloggen op het dashboard. De andere gebruikers zijn geen admin en komen op de landing page; hun wachtwoord is ook `password`.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Datamodel
 
-## License
+```
+User 1───* Thread 1───* Topic 1───* Reply
+  │                       │           │
+  └──────────* (auteur via user_id) ──┘
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+| Model    | Velden                                     | Relaties                                        |
+|----------|--------------------------------------------|-------------------------------------------------|
+| `User`   | name, email, password, `is_admin`          | `threads()`, `topics()`, `replies()`, `isAdmin()` |
+| `Thread` | title, content, user_id                    | `author()` (User), `topics()`                   |
+| `Topic`  | title, content, user_id, thread_id         | `author()`, `thread()`, `replies()`             |
+| `Reply`  | content, user_id, topic_id                 | `author()`, `topic()`                           |
+
+- Een **thread** is een categorie (bijv. "PHP"); de auteur wordt in de view getoond als *moderator*.
+- Een **topic** is een onderwerp/vraag binnen een thread.
+- Een **reply** is een reactie op een topic.
+- Mass assignment wordt geregeld met het `#[Fillable([...])]`-attribuut op de models.
+- De foreign keys zijn `unsignedBigInteger`-kolommen zonder database-constraints.
+
+## Routes
+
+| Methode | URL              | Naam            | Actie                     |
+|---------|------------------|-----------------|---------------------------|
+| GET     | `/`              | `threads.index` | Overzicht van alle threads met aantal topics |
+| GET     | `/threads/{id}`  | `threads.show`  | Topics van één thread met aantal replies     |
+| GET     | `/topics/{id}`   | `topics.show`   | Eén topic met replies en replyformulier      |
+| POST    | `/topics/{id}/replies` | `replies.store` | Reply plaatsen (`auth`)                |
+| GET     | `/dashboard`     | `dashboard`     | Breeze-dashboard, alleen voor admins (`auth`, `verified`, `admin`) |
+| GET/PATCH/DELETE | `/profile` | `profile.*` | Profielbeheer (Breeze)                    |
+
+Authenticatieroutes (login, register, wachtwoord-reset, e-mailverificatie) staan in `routes/auth.php`.
+
+De middleware `admin` (`EnsureUserIsAdmin`, alias in `bootstrap/app.php`) stuurt gebruikers die geen admin zijn door naar `threads.index`.
+
+## Projectstructuur (relevante delen)
+
+```
+app/Http/Controllers/ThreadController.php   # threads (index, show)
+app/Http/Controllers/TopicsController.php   # topicpagina (show)
+app/Http/Controllers/RepliesController.php  # reply plaatsen (store)
+app/Http/Middleware/EnsureUserIsAdmin.php   # alleen admins doorlaten
+app/Models/{User,Thread,Topic,Reply}.php
+database/migrations/2026_10_06_*            # forumtabellen + is_admin
+database/factories/                         # factories voor alle models
+database/seeders/DatabaseSeeder.php
+resources/views/layouts/main.blade.php      # layout van het forum
+resources/views/thread/{index,show}.blade.php
+resources/views/topic/show.blade.php
+resources/views/auth, profile, layouts/app  # Breeze (Tailwind)
+public/css, public/js, public/img           # statische forum-assets
+```
+
+Het forum gebruikt de eigen layout `layouts.main` (`@extends` / `@section`); de Breeze-pagina's gebruiken de componentlayouts `<x-app-layout>` en `<x-guest-layout>`.
+
+## Status
+
+Klaar:
+
+- [x] Models, migraties, factories en seeder voor threads, topics en replies
+- [x] Threadoverzicht met aantal topics (eager loading + `withCount`)
+- [x] Threadpagina met topics, auteur en aantal replies
+- [x] Topicpagina met replies, bereikbaar vanaf de threadpagina
+- [x] Reply plaatsen met CKEditor (alleen ingelogd; HTML wordt als platte tekst getoond)
+- [x] Registreren, inloggen en profielbeheer via Breeze
+- [x] Dashboard alleen voor admins (`admin`-middleware)
+- [x] Admin-account in de seeder (`is_admin = true`)
+- [x] Menu-links voor profiel, beheer en afmelden
+
+Nog te doen (o.a.):
+
+- [ ] Threads en topics aanmaken; threads, topics en replies wijzigen en verwijderen (de controllers hebben lege resource-methodes)
+- [ ] Opmaak in replies veilig tonen (vraagt een pakket dat HTML schoonmaakt)
+- [ ] Replies met alleen spaties weigeren (CKEditor maakt er `<p>&nbsp;</p>` van)
+- [ ] Na aanmelden terug naar de topic
+- [ ] Beheerfuncties op het dashboard (nu nog de standaard Breeze-pagina)
+- [ ] Foreign key constraints in de migraties
+- [ ] Footerpagina's (regels, contact, disclaimer, privacy, cookies)
+- [ ] Feature test voor het threadoverzicht
+
+## Testen
+
+```bash
+php artisan test --compact
+vendor/bin/pint --dirty
+```
+
+Naast de standaard Breeze-tests (authenticatie en profiel) zijn er:
+
+- `DashboardTest`: toegang tot het dashboard, menu-links en afmeldformulier
+- `ThreadControllerTest`: links van een thread naar de topics
+- `TopicsControllerTest`: topicpagina met replies
+- `RepliesControllerTest`: reply plaatsen, validatie en veilig tonen
+
+Tests draaien op SQLite in het geheugen.
