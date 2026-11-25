@@ -21,7 +21,10 @@ class TopicFactory extends Factory
             'title' => fake()->sentence(),
             'user_id' => fake()->numberBetween(1, 10),
             'content' => fake()->paragraph(),
-            'thread_id' => fake()->numberBetween(1, 20)
+            // Threads 19 en 20 blijven leeg
+            'thread_id' => fake()->numberBetween(1, 18),
+            'created_at' => fake()->dateTimeBetween('-30 days', '-7 days'),
+            'updated_at' => fn (array $attributes) => $attributes['created_at'],
         ];
     }
 }

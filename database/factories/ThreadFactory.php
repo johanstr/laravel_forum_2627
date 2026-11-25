@@ -20,7 +20,9 @@ class ThreadFactory extends Factory
         return [
             'title' => fake()->sentence(),
             'user_id' => fake()->numberBetween(1, 10),
-            'content' => fake()->paragraph()
+            'content' => fake()->paragraph(),
+            'created_at' => fake()->dateTimeBetween('-40 days', '-30 days'),
+            'updated_at' => fn (array $attributes) => $attributes['created_at'],
         ];
     }
 }

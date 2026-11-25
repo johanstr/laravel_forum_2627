@@ -22,8 +22,9 @@ Laravel Boost is al geïnstalleerd (`boost.json`, `.mcp.json`, skills in `.claud
 - Formulieren: inline `$request->validate()` met Nederlandse meldingen, `user_id` altijd uit `$request->user()`, daarna een redirect.
 - Replies bevatten HTML uit CKEditor: toon ze met `{{ html_entity_decode(strip_tags(...)) }}`, nooit met `{!! !!}` zonder HTML-sanitizer.
 - Eager loading met `with()` en tellingen met `withCount()` om N+1 te voorkomen.
-- Forum-views: `resources/views/thread/*` en `resources/views/topic/*` met `@extends('layouts.main')` en statische assets uit `public/css`, `public/js`, `public/img` via `asset()`. Geen Tailwind in de forum-views. Extra scripts per pagina met `@push('scripts')`.
-- Breeze-views (`auth/`, `profile/`, `dashboard`) gebruiken Tailwind + `<x-app-layout>` / `<x-guest-layout>`.
+- Forum-views: `thread/*`, `topic/*`, `dashboard`, `profile/*`, `auth/login` en `auth/register` (in `resources/views`) met `@extends('layouts.main')` en statische assets uit `public/css`, `public/js`, `public/img` via `asset()`. Geen Tailwind in de forum-views. Extra scripts per pagina met `@push('scripts')`.
+- Overige Breeze-views in `auth/` gebruiken Tailwind + `<x-guest-layout>`. `<x-app-layout>` en `layouts/navigation` worden niet meer gebruikt.
+- Dashboard: `DashboardController@index` met aantallen en lijsten; stijlen voor tegels staan in `public/css/forum.css`.
 - Database: SQLite standaard (`.env.example`), lokaal kan `.env` MySQL gebruiken; tests draaien op SQLite in het geheugen. Na wijzigingen aan migraties/seeders: `php artisan migrate:fresh --seed`.
 
 ## Commando's
@@ -38,5 +39,6 @@ vendor/bin/pint --dirty --format agent
 ## Bekende aandachtspunten
 
 - Het seed-account `admin@admin.com` / `password` is de enige admin; na het inloggen gaat iedereen eerst naar `/dashboard`, waarna de middleware gewone gebruikers doorstuurt.
-- Factories kiezen `user_id`/`thread_id`/`topic_id` met vaste `numberBetween`-bereiken; die moeten passen bij de aantallen in `DatabaseSeeder`.
+- Factories kiezen `user_id`/`thread_id`/`topic_id` met vaste `numberBetween`-bereiken; die moeten passen bij de aantallen in `DatabaseSeeder`. Bewust leeg: threads 19-20 (geen topics) en topics 46-50 (geen replies). De `created_at`-bereiken lopen op van user naar reply.
+- Bij een verwijderd account blijven threads, topics en replies bestaan; `author` is dan `null`. Het dashboard vangt dit op met `?->`, de thread- en topicviews nog niet.
 - De footer-links in `layouts/main.blade.php` verwijzen nog naar statische `.html`-bestanden uit het oorspronkelijke HTML-template (`../design`, buiten deze repo).

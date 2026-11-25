@@ -33,7 +33,7 @@ De seeder maakt een vast account aan:
 - E-mail: `admin@admin.com`
 - Wachtwoord: `password`
 
-Daarnaast worden 9 extra gebruikers, 20 threads, 50 topics en 200 replies met nepdata aangemaakt.
+Daarnaast worden 9 extra gebruikers, 20 threads, 50 topics en 200 replies met nepdata aangemaakt, verspreid over de afgelopen 60 dagen. Threads 19 en 20 blijven leeg en topics 46 t/m 50 onbeantwoord, zodat het dashboard iets te tonen heeft.
 
 Het testaccount is admin (`is_admin = true`) en komt na het inloggen op het dashboard. De andere gebruikers zijn geen admin en komen op de landing page; hun wachtwoord is ook `password`.
 
@@ -66,8 +66,8 @@ User 1───* Thread 1───* Topic 1───* Reply
 | GET     | `/threads/{id}`  | `threads.show`  | Topics van één thread met aantal replies     |
 | GET     | `/topics/{id}`   | `topics.show`   | Eén topic met replies en replyformulier      |
 | POST    | `/topics/{id}/replies` | `replies.store` | Reply plaatsen (`auth`)                |
-| GET     | `/dashboard`     | `dashboard`     | Breeze-dashboard, alleen voor admins (`auth`, `verified`, `admin`) |
-| GET/PATCH/DELETE | `/profile` | `profile.*` | Profielbeheer (Breeze)                    |
+| GET     | `/dashboard`     | `dashboard`     | Dashboard met tegels, alleen voor admins (`auth`, `verified`, `admin`) |
+| GET/PATCH/DELETE | `/profile` | `profile.*` | Profielbeheer (Breeze-controller, forumdesign) |
 
 Authenticatieroutes (login, register, wachtwoord-reset, e-mailverificatie) staan in `routes/auth.php`.
 
@@ -79,6 +79,7 @@ De middleware `admin` (`EnsureUserIsAdmin`, alias in `bootstrap/app.php`) stuurt
 app/Http/Controllers/ThreadController.php   # threads (index, show)
 app/Http/Controllers/TopicsController.php   # topicpagina (show)
 app/Http/Controllers/RepliesController.php  # reply plaatsen (store)
+app/Http/Controllers/DashboardController.php # dashboard voor admins (index)
 app/Http/Middleware/EnsureUserIsAdmin.php   # alleen admins doorlaten
 app/Models/{User,Thread,Topic,Reply}.php
 database/migrations/2026_10_06_*            # forumtabellen + is_admin
@@ -87,11 +88,13 @@ database/seeders/DatabaseSeeder.php
 resources/views/layouts/main.blade.php      # layout van het forum
 resources/views/thread/{index,show}.blade.php
 resources/views/topic/show.blade.php
-resources/views/auth, profile, layouts/app  # Breeze (Tailwind)
+resources/views/dashboard.blade.php         # tegels, forumdesign
+resources/views/profile/                    # profiel, forumdesign
+resources/views/auth                        # login/register in forumdesign, rest Breeze (Tailwind)
 public/css, public/js, public/img           # statische forum-assets
 ```
 
-Het forum gebruikt de eigen layout `layouts.main` (`@extends` / `@section`); de Breeze-pagina's gebruiken de componentlayouts `<x-app-layout>` en `<x-guest-layout>`.
+Het forum gebruikt de eigen layout `layouts.main` (`@extends` / `@section`); de overige Breeze-pagina's (wachtwoord vergeten, verificatie) gebruiken `<x-guest-layout>`. `<x-app-layout>` en `layouts/navigation` worden niet meer gebruikt.
 
 ## Status
 
@@ -103,7 +106,8 @@ Klaar:
 - [x] Topicpagina met replies, bereikbaar vanaf de threadpagina
 - [x] Reply plaatsen met CKEditor (alleen ingelogd; HTML wordt als platte tekst getoond)
 - [x] Registreren, inloggen en profielbeheer via Breeze
-- [x] Dashboard alleen voor admins (`admin`-middleware)
+- [x] Dashboard alleen voor admins (`admin`-middleware), met tegels in het forumdesign
+- [x] Profielpagina in het forumdesign
 - [x] Admin-account in de seeder (`is_admin = true`)
 - [x] Menu-links voor profiel, beheer en afmelden
 
@@ -113,7 +117,10 @@ Nog te doen (o.a.):
 - [ ] Opmaak in replies veilig tonen (vraagt een pakket dat HTML schoonmaakt)
 - [ ] Replies met alleen spaties weigeren (CKEditor maakt er `<p>&nbsp;</p>` van)
 - [ ] Na aanmelden terug naar de topic
-- [ ] Beheerfuncties op het dashboard (nu nog de standaard Breeze-pagina)
+- [ ] Beheerfuncties op het dashboard (wijzigen en verwijderen)
+- [ ] Extra tegels: populairste topics, actiefste gebruikers, nieuw deze week
+- [ ] Verwijderde accounts: threads, topics en replies blijven staan zonder schrijver en geven een fout op de forumpagina's
+- [ ] Nederlandse validatiemeldingen (de app staat op `en`)
 - [ ] Foreign key constraints in de migraties
 - [ ] Footerpagina's (regels, contact, disclaimer, privacy, cookies)
 - [ ] Feature test voor het threadoverzicht
@@ -127,7 +134,7 @@ vendor/bin/pint --dirty
 
 Naast de standaard Breeze-tests (authenticatie en profiel) zijn er:
 
-- `DashboardTest`: toegang tot het dashboard, menu-links en afmeldformulier
+- `DashboardTest`: toegang tot het dashboard, aantallen en lijsten, menu-links en afmeldformulier
 - `ThreadControllerTest`: links van een thread naar de topics
 - `TopicsControllerTest`: topicpagina met replies
 - `RepliesControllerTest`: reply plaatsen, validatie en veilig tonen

@@ -20,7 +20,10 @@ class ReplyFactory extends Factory
         return [
             'content' => fake()->paragraph(),
             'user_id' => fake()->numberBetween(1, 10),
-            'topic_id' => fake()->numberBetween(1, 50)
+            // Topics 46 t/m 50 blijven onbeantwoord
+            'topic_id' => fake()->numberBetween(1, 45),
+            'created_at' => fake()->dateTimeBetween('-7 days', 'now'),
+            'updated_at' => fn (array $attributes) => $attributes['created_at'],
         ];
     }
 }

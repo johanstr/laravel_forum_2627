@@ -17,3 +17,44 @@ p.last-post-timestamp {
     font-size: 9px;
     font-style: italic;
 }
+
+/* Tegels op het dashboard */
+.tile {
+    text-align: center;
+}
+
+.tile-number {
+    font-size: 40px;
+    line-height: 48px;
+}
+
+.tile-label {
+    font-size: 18px;
+}
+
+.tile-info {
+    font-size: 12px;
+    font-style: italic;
+}
+
+.tile-meta {
+    display: block;
+    font-size: 11px;
+    font-style: italic;
+    color: #757575;
+}
+
+.tile-badge {
+    font-size: 11px;
+    padding: 2px 6px;
+}
+
+/* Meldingen op de profielpagina */
+.card .card-content p.form-status {
+    color: #00897b;
+    font-style: italic;
+}
+
+.card .card-content p.form-intro {
+    margin-bottom: 25px;
+}

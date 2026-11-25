@@ -31,6 +31,8 @@ class UserFactory extends Factory
             'password' => Hash::make('password'),
             'remember_token' => Str::random(10),
             'is_admin' => false,
+            'created_at' => fake()->dateTimeBetween('-60 days', '-40 days'),
+            'updated_at' => fn (array $attributes) => $attributes['created_at'],
         ];
     }
 
